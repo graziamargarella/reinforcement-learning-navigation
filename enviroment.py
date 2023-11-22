@@ -26,7 +26,7 @@ class Enviroment:
         self.dimension_image = imageDimension
         self.robot = Point(self.dimensionX // 100, self.dimensionY // 100)
         self.obstacles = []
-        self.target = Point(0,0)
+        self.target = Point(0, 0)
         self.score = 0
         self.reward = 0
         self.total_reward = 0
@@ -64,8 +64,8 @@ class Enviroment:
 
     # Random Generator of Coordinates
     def _random_generator_coordinates(self):
-        x = random.randint(0, (self.dimensionX // self.dimension_image))
-        y = random.randint(0, (self.dimensionY // self.dimension_image))
+        x = random.randint(0, (self.dimensionX // self.dimension_image)-1)
+        y = random.randint(0, (self.dimensionY // self.dimension_image)-1)
         return x, y
 
     # Return true if the target is surrounded by 4 walls (Does not check every possible unreachability)
@@ -108,7 +108,8 @@ class Enviroment:
         # Robot
         self.screen.blit(self.image_robot, (self.robot.x * self.dimension_image, self.robot.y * self.dimension_image))
         # Score Label
-        self.label_score = self.font.render("Score : " + str(self.score) + " Total Reward : " + str(self.total_reward) , True, "White")
+        self.label_score = self.font.render("Score : " + str(self.score) + " Total Reward : " + str(self.total_reward),
+                                            True, "White")
         self.screen.blit(self.label_score, [0, 0])
         # Update the Window
         pygame.display.update()
@@ -148,7 +149,7 @@ class Enviroment:
         elif np.array_equal(movement, [0, 0, 1, 0]):
             new_pos = Point(position.x, position.y + 1)
             # print("Right")
-        else:
+        elif np.array_equal(movement, [0, 0, 0, 1]):
             new_pos = Point(position.x + 1, position.y)
             # print("Down")
         if new_pos is None or self._out_of_borders(new_pos):
