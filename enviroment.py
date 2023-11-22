@@ -1,11 +1,13 @@
 import pygame
 import random
+import numpy as np
 from pygame import QUIT
 from collections import namedtuple
 
 # Global Parameters
-windowWidth = 800
-windowHight = 800
+framerate = 20
+windowWidth = 850
+windowHight = 850
 imageDimension = 50
 imageRobotPath = "images/robot.png"
 imageObstaclePath = "images/armchair.png"
@@ -22,12 +24,17 @@ class Enviroment:
         self.dimensionX = windowHight
         self.dimensionY = windowWidth
         self.dimension_image = imageDimension
-        self.robot = Point(self.dimensionX / 100, self.dimensionY / 100)
+        self.robot = Point(self.dimensionX // 100, self.dimensionY // 100)
         self.obstacles = []
-        self.target = Point(0, 0)
+        self.target = Point(0,0)
+        self.score = 0
+        self.reward = 0
+        self.total_reward = 0
+        self.game_over = False
 
         # Init the Window
         pygame.init()
+        self.font = pygame.font.SysFont('Arial', 25)
         self.screen = pygame.display.set_mode((self.dimensionX, self.dimensionY))
         pygame.display.set_caption("Robot Navigation")
 
@@ -44,9 +51,16 @@ class Enviroment:
                                                       (self.dimension_image, self.dimension_image))
         self.image_target = pygame.transform.scale(self.image_target, (self.dimension_image, self.dimension_image))
 
-        # Set Clock and update interface
+        # Set the score label
+        self.label_score = self.font.render("Score : " + str(self.score), True, "White")
+        self.screen.blit(self.label_score, [0, 0])
+
+        # Set Background,Clock and update interface
+        self.screen.blit(self.image_background, (0, 0))
+        self._place_something(food=True)
         self.clock = pygame.time.Clock()
-        pygame.display.flip()
+        pygame.display.update()
+        # pygame.display.flip()
 
     # Random Generator of Coordinates
     def _random_generator_coordinates(self):
@@ -81,35 +95,114 @@ class Enviroment:
         else:
             self.obstacles.append(tmp)
 
+    # Redraw the interface with new positions
     def _redraw_interface(self):
+        # BackGround
+        self.screen.blit(self.image_background, (0, 0))
+        # Obstacles
         for obs in self.obstacles:
             self.screen.blit(self.image_furniture, (obs.x * self.dimension_image, obs.y * self.dimension_image))
+        # Target
         self.screen.blit(self.image_target,
                          (self.target.x * self.dimension_image, self.target.y * self.dimension_image))
+        # Robot
         self.screen.blit(self.image_robot, (self.robot.x * self.dimension_image, self.robot.y * self.dimension_image))
+        # Score Label
+        self.label_score = self.font.render("Score : " + str(self.score) + " Total Reward : " + str(self.total_reward) , True, "White")
+        self.screen.blit(self.label_score, [0, 0])
+        # Update the Window
         pygame.display.update()
 
+    # Checks if the robot goes out of the borders
+    def _out_of_borders(self, new_pos):
+        if new_pos.x < 0 or new_pos.y < 0:
+            return True
+        if new_pos.x > self.dimensionX // self.dimension_image or new_pos.y > self.dimensionY // self.dimension_image:
+            return True
+        return False
+
+    # Checks if the robot hit an obstacle
+    def _hit_obstacle(self, new_pos):
+        if new_pos in self.obstacles:
+            return True
+        return False
+
+    # Checks if the robot take a target
+    def _hit_target(self, new_pos):
+        if new_pos == self.target:
+            return True
+        return False
+
+    # Called to move the target in a direction
+    # Movement is an array composed by [Up, Left, Right, Down]
+    def _move_target(self, movement):
+        position = self.robot
+        finish_game = True
+        new_pos = None
+        if np.array_equal(movement, [1, 0, 0, 0]):
+            new_pos = Point(position.x - 1, position.y)
+            # print("Up")
+        elif np.array_equal(movement, [0, 1, 0, 0]):
+            new_pos = Point(position.x, position.y - 1)
+            # print("Left")
+        elif np.array_equal(movement, [0, 0, 1, 0]):
+            new_pos = Point(position.x, position.y + 1)
+            # print("Right")
+        else:
+            new_pos = Point(position.x + 1, position.y)
+            # print("Down")
+        if new_pos is None or self._out_of_borders(new_pos):
+            self.reward = -10
+        elif self._hit_obstacle(new_pos):
+            self.reward = -10
+        elif self._hit_target(new_pos):
+            self.reward = 10
+            finish_game = False
+        else:
+            self.reward = -1
+            finish_game = False
+        if finish_game:
+            self.game_over = finish_game
+        else:
+            self.robot = new_pos
+
     # Called Every time to reset position of the robot, score, obstacles and number of targets acquired
-    def reset(self):
-        self.robot = Point(self.dimensionX // 2, self.dimensionY // 2)
+    def _reset(self):
+        self.robot = Point(self.dimensionX // 100, self.dimensionY // 100)
         self.obstacles = []
-        self.target = Point(0, 0)
+        self._place_something(food=True)
+        self.score = 0
+        self.total_reward = 0
+        self.game_over = False
+        self.screen.blit(self.image_background, (0, 0))
 
-    # Execution Method to show the window and start the simulation
+    # Update the robot position given a movement and eventually reset the game
+    def execute_a_step(self, movement):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+        self._move_target(movement)
+        self.total_reward = self.total_reward + self.reward
+        if self.game_over:
+            self._reset()
+        if self._hit_target(self.robot):
+            self._place_something(food=False)
+            self._place_something(food=True)
+        self._redraw_interface()
+        self.clock.tick(framerate)
+
+    # Test Method to see how it works
     def execute(self):
-        run = True
-        c = 0
-        while run:
-            self.screen.blit(self.image_background, (0, 0))
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    run = False
-            if c < 10:
-                self._place_something(False)
-                c = c + 1
-            self._redraw_interface()
-
-        pygame.quit()
+        while True:
+            movement = [1, 0, 0, 0]
+            self.execute_a_step(movement)
+            movement = [0, 1, 0, 0]
+            self.execute_a_step(movement)
+            movement = [0, 0, 1, 0]
+            self.execute_a_step(movement)
+            movement = [0, 0, 0, 1]
+            self.execute_a_step(movement)
 
 
 if __name__ == "__main__":
