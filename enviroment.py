@@ -1,7 +1,6 @@
 import pygame
 import random
 import numpy as np
-from pygame import QUIT
 from collections import namedtuple
 
 # Global Parameters
@@ -24,7 +23,7 @@ class Enviroment:
         self.dimensionX = windowHight
         self.dimensionY = windowWidth
         self.dimension_image = imageDimension
-        self.robot = Point(self.dimensionX // 100, self.dimensionY // 100)
+        self.robot = Point(self.dimensionX // (2 * self.dimension_image), self.dimensionY // (2 * self.dimension_image))
         self.obstacles = []
         self.target = Point(0, 0)
         self.score = 0
@@ -64,8 +63,8 @@ class Enviroment:
 
     # Random Generator of Coordinates
     def _random_generator_coordinates(self):
-        x = random.randint(0, (self.dimensionX // self.dimension_image)-1)
-        y = random.randint(0, (self.dimensionY // self.dimension_image)-1)
+        x = random.randint(0, (self.dimensionX // self.dimension_image) - 1)
+        y = random.randint(0, (self.dimensionY // self.dimension_image) - 1)
         return x, y
 
     # Return true if the target is surrounded by 4 walls (Does not check every possible unreachability)
@@ -141,16 +140,16 @@ class Enviroment:
         finish_game = True
         new_pos = None
         if np.array_equal(movement, [1, 0, 0, 0]):
-            new_pos = Point(position.x - 1, position.y)
+            new_pos = Point(position.x, position.y - 1)
             # print("Up")
         elif np.array_equal(movement, [0, 1, 0, 0]):
-            new_pos = Point(position.x, position.y - 1)
+            new_pos = Point(position.x - 1, position.y)
             # print("Left")
         elif np.array_equal(movement, [0, 0, 1, 0]):
-            new_pos = Point(position.x, position.y + 1)
+            new_pos = Point(position.x + 1, position.y)
             # print("Right")
         elif np.array_equal(movement, [0, 0, 0, 1]):
-            new_pos = Point(position.x + 1, position.y)
+            new_pos = Point(position.x, position.y + 1)
             # print("Down")
         if new_pos is None or self._out_of_borders(new_pos):
             self.reward = -10
@@ -169,13 +168,26 @@ class Enviroment:
 
     # Called Every time to reset position of the robot, score, obstacles and number of targets acquired
     def _reset(self):
-        self.robot = Point(self.dimensionX // 100, self.dimensionY // 100)
+        self.robot = Point(self.dimensionX // (2 * self.dimension_image), self.dimensionY // (2 * self.dimension_image))
         self.obstacles = []
         self._place_something(food=True)
         self.score = 0
         self.total_reward = 0
         self.game_over = False
         self.screen.blit(self.image_background, (0, 0))
+
+    # Return the observations for the agent
+    # Composed by [TargetUp, TargetLeft, TargetRight, TargetDown, ObstacleUp, ObstacleLeft, ObstacleRight, ObstacleDown]
+    def get_observations(self):
+        up = Point(self.robot.x, self.robot.y - 1)
+        down = Point(self.robot.x, self.robot.y + 1)
+        left = Point(self.robot.x - 1, self.robot.y)
+        right = Point(self.robot.x + 1, self.robot.y)
+        obs = [self.robot.y > self.target.y, self.robot.x > self.target.x,self.robot.x < self.target.x,
+               self.robot.y < self.target.y, up in self.obstacles, left in self.obstacles,
+               right in self.obstacles, down in self.obstacles]
+        print("Obseration Vector: %s" % str(obs))
+        return obs
 
     # Update the robot position given a movement and eventually reset the game
     def execute_a_step(self, movement):
