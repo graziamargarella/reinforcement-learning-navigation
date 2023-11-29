@@ -4,7 +4,7 @@ import numpy as np
 from collections import namedtuple
 
 # Global Parameters
-framerate = 20
+framerate = 40
 windowWidth = 850
 windowHight = 850
 imageDimension = 50
@@ -107,17 +107,18 @@ class Enviroment:
         # Robot
         self.screen.blit(self.image_robot, (self.robot.x * self.dimension_image, self.robot.y * self.dimension_image))
         # Score Label
-        self.label_score = self.font.render("Score : " + str(self.score) + " Total Reward : " + str(self.total_reward),
-                                            True, "White")
+        self.label_score = self.font.render("Score : " + str(self.score)
+                                            # + " Total Reward : " + str(self.total_reward),
+                                            , True, "White")
         self.screen.blit(self.label_score, [0, 0])
         # Update the Window
         pygame.display.update()
 
     # Checks if the robot goes out of the borders
     def _out_of_borders(self, new_pos):
-        if new_pos.x < 0 or new_pos.y < 0:
+        if new_pos.x <= 0 or new_pos.y <= 0:
             return True
-        if new_pos.x > self.dimensionX // self.dimension_image or new_pos.y > self.dimensionY // self.dimension_image:
+        if new_pos.x >= self.dimensionX // self.dimension_image or new_pos.y >= self.dimensionY // self.dimension_image:
             return True
         return False
 
@@ -152,14 +153,15 @@ class Enviroment:
             new_pos = Point(position.x, position.y + 1)
             # print("Down")
         if new_pos is None or self._out_of_borders(new_pos):
-            self.reward = -10
+            self.reward = 0
         elif self._hit_obstacle(new_pos):
-            self.reward = -10
+            self.reward = 0
         elif self._hit_target(new_pos):
             self.reward = 10
+            self.score = self.score + 1
             finish_game = False
         else:
-            self.reward = -1
+            self.reward = 0
             finish_game = False
         if finish_game:
             self.game_over = finish_game
@@ -171,10 +173,23 @@ class Enviroment:
         self.robot = Point(self.dimensionX // (2 * self.dimension_image), self.dimensionY // (2 * self.dimension_image))
         self.obstacles = []
         self._place_something(food=True)
+        # self.place_n_obstacles(10)
         self.score = 0
         self.total_reward = 0
         self.game_over = False
         self.screen.blit(self.image_background, (0, 0))
+
+    def place_n_obstacles(self, n):
+        for i in range(0, n):
+            self._place_something(food=False)
+
+    # Return True if has a obstacle or a border
+    def obstacle_or_border(self, new_pos):
+        if new_pos in self.obstacles:
+            return True
+        elif self._out_of_borders(new_pos):
+            return True
+        return False
 
     # Return the observations for the agent
     # Composed by [TargetUp, TargetLeft, TargetRight, TargetDown, ObstacleUp, ObstacleLeft, ObstacleRight, ObstacleDown]
@@ -183,10 +198,10 @@ class Enviroment:
         down = Point(self.robot.x, self.robot.y + 1)
         left = Point(self.robot.x - 1, self.robot.y)
         right = Point(self.robot.x + 1, self.robot.y)
-        obs = [self.robot.y > self.target.y, self.robot.x > self.target.x,self.robot.x < self.target.x,
-               self.robot.y < self.target.y, up in self.obstacles, left in self.obstacles,
-               right in self.obstacles, down in self.obstacles]
-        print("Obseration Vector: %s" % str(obs))
+        obs = (self.robot.y > self.target.y, self.robot.x > self.target.x, self.robot.x < self.target.x,
+               self.robot.y < self.target.y, self.obstacle_or_border(up), self.obstacle_or_border(left),
+               self.obstacle_or_border(right), self.obstacle_or_border(down))
+        # print("Observation Vector: %s" % str(obs))
         return obs
 
     # Update the robot position given a movement and eventually reset the game
@@ -197,13 +212,18 @@ class Enviroment:
                 quit()
         self._move_target(movement)
         self.total_reward = self.total_reward + self.reward
+        finish = False
+        tot = self.total_reward
+        score = self.score
         if self.game_over:
+            finish = True
             self._reset()
         if self._hit_target(self.robot):
-            self._place_something(food=False)
+            # self._place_something(food=False)
             self._place_something(food=True)
         self._redraw_interface()
         self.clock.tick(framerate)
+        return self.reward, self.get_observations(), finish, tot, score
 
     # Test Method to see how it works
     def execute(self):
@@ -217,7 +237,6 @@ class Enviroment:
             movement = [0, 0, 0, 1]
             self.execute_a_step(movement)
 
-
-if __name__ == "__main__":
-    env = Enviroment()
-    env.execute()
+# if __name__ == "__main__":
+#    env = Enviroment()
+#    env.execute()
