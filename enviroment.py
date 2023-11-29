@@ -86,7 +86,7 @@ class Enviroment:
     def _place_something(self, food):
         x, y = self._random_generator_coordinates()
         tmp = Point(x, y)
-        while tmp in self.obstacles or tmp == self.robot or tmp == self.target:
+        while tmp in self.obstacles or tmp == self.robot or tmp == self.target or self._out_of_borders(tmp):
             x, y = self._random_generator_coordinates()
             tmp = Point(x, y)
         if food:
@@ -116,7 +116,7 @@ class Enviroment:
 
     # Checks if the robot goes out of the borders
     def _out_of_borders(self, new_pos):
-        if new_pos.x <= 0 or new_pos.y <= 0:
+        if new_pos.x < 0 or new_pos.y < 0:
             return True
         if new_pos.x >= self.dimensionX // self.dimension_image or new_pos.y >= self.dimensionY // self.dimension_image:
             return True
@@ -153,15 +153,15 @@ class Enviroment:
             new_pos = Point(position.x, position.y + 1)
             # print("Down")
         if new_pos is None or self._out_of_borders(new_pos):
-            self.reward = 0
+            self.reward = -10
         elif self._hit_obstacle(new_pos):
-            self.reward = 0
+            self.reward = -10
         elif self._hit_target(new_pos):
-            self.reward = 10
+            self.reward = 100
             self.score = self.score + 1
             finish_game = False
         else:
-            self.reward = 0
+            self.reward = -0.1
             finish_game = False
         if finish_game:
             self.game_over = finish_game
@@ -173,7 +173,7 @@ class Enviroment:
         self.robot = Point(self.dimensionX // (2 * self.dimension_image), self.dimensionY // (2 * self.dimension_image))
         self.obstacles = []
         self._place_something(food=True)
-        # self.place_n_obstacles(10)
+        # self.place_n_obstacles(20)
         self.score = 0
         self.total_reward = 0
         self.game_over = False
@@ -219,7 +219,7 @@ class Enviroment:
             finish = True
             self._reset()
         if self._hit_target(self.robot):
-            # self._place_something(food=False)
+            self._place_something(food=False)
             self._place_something(food=True)
         self._redraw_interface()
         self.clock.tick(framerate)
