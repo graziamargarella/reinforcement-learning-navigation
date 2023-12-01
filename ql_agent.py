@@ -1,5 +1,6 @@
 from enviroment import Enviroment
 import numpy as np
+import pandas as pd
 import helper
 
 episodes = 5000
@@ -21,6 +22,10 @@ class QlAgent:
         self.scores = []
         self.mean_scores = []
         self.random = []
+    def save_qtable(self):
+        set = self.q_table
+        result = pd.DataFrame(dict(set))
+        result.to_csv('q_table.csv')
 
     def train(self):
         global explo_proba
@@ -55,6 +60,7 @@ class QlAgent:
             self.mean_scores.append(np.mean(self.scores))
             helper.plot(self.scores, self.mean_scores, self.random)
             print("Explo Proba %s" % explo_proba)
+            self.save_qtable()
 
 
 if __name__ == "__main__":
