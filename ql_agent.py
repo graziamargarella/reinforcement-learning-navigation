@@ -3,16 +3,15 @@ import numpy as np
 import pandas as pd
 import helper
 
-episodes = 5000
-max_iter_episode = 5000
+episodes = 6000
+max_iter_episode = 10000
 explo_proba = 1
 explo_decre = 0.01
 min_explo_proba = 0.01
 gamma = 0.99
-learning_rate = 0.001
+learning_rate = 0.001 #0.001
 
 
-# https://towardsdatascience.com/q-learning-algorithm-from-explanation-to-implementation-cdbeda2ea187
 class QlAgent:
 
     def __init__(self, enviroment):
@@ -22,6 +21,7 @@ class QlAgent:
         self.scores = []
         self.mean_scores = []
         self.random = []
+
     def save_qtable(self):
         set = self.q_table
         result = pd.DataFrame(dict(set))
@@ -47,9 +47,10 @@ class QlAgent:
                 reward, new_obs, finish, tot, score = self.env.execute_a_step(action)
                 if new_obs not in self.q_table:
                     self.q_table[new_obs] = np.zeros(4)
-                self.q_table[obs][index] = self.q_table[obs][index] + learning_rate * (
-                        reward + gamma * np.argmax(self.q_table[new_obs], axis=0))
-                # self.q_table[obs, index] = self.q_table[obs, index] + learning_rate * (reward + gamma * np.argmax(self.q_table[new_obs, :]) - self.q_table[new_obs, index])
+                # self.q_table[obs][index] = self.q_table[obs][index] + learning_rate * (
+                #        reward + gamma * np.argmax(self.q_table[new_obs], axis=0))
+                self.q_table[obs][index] = ((1 - learning_rate) * (self.q_table[obs][index]) + learning_rate *
+                                            (reward + gamma * np.argmax(self.q_table[new_obs], axis=0)))
                 if finish:
                     break
                 obs = new_obs
