@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import helper
 
-episodes = 6000
+episodes = 3000
 max_iter_episode = 10000
 explo_proba = 1
 explo_decre = 0.01

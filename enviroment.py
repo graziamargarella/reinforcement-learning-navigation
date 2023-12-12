@@ -157,11 +157,11 @@ class Enviroment:
         elif self._hit_obstacle(new_pos):
             self.reward = -10
         elif self._hit_target(new_pos):
-            self.reward = 100
+            self.reward = 10000
             self.score = self.score + 1
             finish_game = False
         else:
-            self.reward = -0.1
+            self.reward = -0.5
             finish_game = False
         if finish_game:
             self.game_over = finish_game
@@ -199,8 +199,8 @@ class Enviroment:
         left = Point(self.robot.x - 1, self.robot.y)
         right = Point(self.robot.x + 1, self.robot.y)
         obs = (self.robot.y > self.target.y, self.robot.x > self.target.x, self.robot.x < self.target.x,
-               self.robot.y < self.target.y, self.obstacle_or_border(up), self.obstacle_or_border(left),
-               self.obstacle_or_border(right), self.obstacle_or_border(down))
+               self.robot.y < self.target.y, self._hit_obstacle(up), self._hit_obstacle(left),
+               self._hit_obstacle(right), self._hit_obstacle(down))
         # print("Observation Vector: %s" % str(obs))
         return obs
 
