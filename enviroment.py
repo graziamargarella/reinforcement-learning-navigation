@@ -4,7 +4,7 @@ import numpy as np
 from collections import namedtuple
 
 # Global Parameters
-framerate = 40
+framerate = 60
 windowWidth = 850
 windowHight = 850
 imageDimension = 50
@@ -152,16 +152,16 @@ class Enviroment:
         elif np.array_equal(movement, [0, 0, 0, 1]):
             new_pos = Point(position.x, position.y + 1)
             # print("Down")
-        if new_pos is None or self._out_of_borders(new_pos):
-            self.reward = -10
+        if new_pos is None or self._out_of_borders(new_pos):  # -10 -10 1000 -0.1 best combo
+            self.reward = -10  # 10
         elif self._hit_obstacle(new_pos):
-            self.reward = -10
+            self.reward = -10  # 10
         elif self._hit_target(new_pos):
-            self.reward = 10000
+            self.reward = 10000 # 10k
             self.score = self.score + 1
             finish_game = False
         else:
-            self.reward = -0.5
+            self.reward = -0.5  # -0.5
             finish_game = False
         if finish_game:
             self.game_over = finish_game
@@ -194,14 +194,22 @@ class Enviroment:
     # Return the observations for the agent
     # Composed by [TargetUp, TargetLeft, TargetRight, TargetDown, ObstacleUp, ObstacleLeft, ObstacleRight, ObstacleDown]
     def get_observations(self):
+        vertical = 0
+        if self.robot.y > self.target.y:
+            vertical = 1
+        elif self.robot.y < self.target.y:
+            vertical = 2
+        horizontal = 0
+        if self.robot.x > self.target.x:
+            horizontal = 1
+        elif self.robot.x < self.target.x:
+            horizontal = 2
         up = Point(self.robot.x, self.robot.y - 1)
         down = Point(self.robot.x, self.robot.y + 1)
         left = Point(self.robot.x - 1, self.robot.y)
         right = Point(self.robot.x + 1, self.robot.y)
-        obs = (self.robot.y > self.target.y, self.robot.x > self.target.x, self.robot.x < self.target.x,
-               self.robot.y < self.target.y, self._hit_obstacle(up), self._hit_obstacle(left),
-               self._hit_obstacle(right), self._hit_obstacle(down))
-        # print("Observation Vector: %s" % str(obs))
+        obs = (vertical, horizontal, self._hit_obstacle(up), self._hit_obstacle(left), self._hit_obstacle(right),
+               self._hit_obstacle(down))
         return obs
 
     # Update the robot position given a movement and eventually reset the game
@@ -219,7 +227,7 @@ class Enviroment:
             finish = True
             self._reset()
         if self._hit_target(self.robot):
-            self._place_something(food=False)
+            self.place_n_obstacles(1)
             self._place_something(food=True)
         self._redraw_interface()
         self.clock.tick(framerate)
