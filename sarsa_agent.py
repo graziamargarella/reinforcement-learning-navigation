@@ -8,7 +8,7 @@ max_iter_episode = 5000
 gamma = 0.99
 learning_rate = 0.01
 eps = 1
-eps_decay = 0.01
+eps_decay = 0.001
 
 class SARSAAgent:
 
@@ -38,8 +38,6 @@ class SARSAAgent:
                 if obs not in self.q_table:
                     self.q_table[obs] = np.zeros(4, dtype=np.double)
 
-                
-
                 if np.random.uniform(0, 1) < eps:
                     index = np.random.randint(0, 4)
                 else:
@@ -56,7 +54,6 @@ class SARSAAgent:
                 if finish:
                     break
                 obs = new_obs
-            #explo_proba = max(min_explo_proba, explo_proba - 2 / episodes)
             print("For episode %s total reward %s" % (e, tot))
             self.rewards.append(tot)
             self.scores.append(score)
