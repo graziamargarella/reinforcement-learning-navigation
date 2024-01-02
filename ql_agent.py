@@ -3,13 +3,13 @@ import numpy as np
 import pandas as pd
 import helper
 
-episodes = 3000
-max_iter_episode = 10000
+episodes = 2500
+max_iter_episode = 5000
 explo_proba = 1
-explo_decre = 0.01
+explo_decre = 0.0005
 min_explo_proba = 0.01
 gamma = 0.99
-learning_rate = 0.001 #0.001
+learning_rate = 0.01 #0.001
 
 
 class QlAgent:
@@ -40,21 +40,21 @@ class QlAgent:
                     index = np.random.randint(0, 4)
                 else:
                     index = np.argmax(self.q_table[obs], axis=0)
-                    print("Obs %s" % str(obs))
-                    print("Max %s %s" % (str(index), str(self.q_table[obs])))
+                    #print("Obs %s" % str(obs))
+                    #print("Max %s %s" % (str(index), str(self.q_table[obs])))
                 action = np.zeros(4)
                 action[index] = 1
                 reward, new_obs, finish, tot, score = self.env.execute_a_step(action)
                 if new_obs not in self.q_table:
                     self.q_table[new_obs] = np.zeros(4)
-                # self.q_table[obs][index] = self.q_table[obs][index] + learning_rate * (
-                #        reward + gamma * np.argmax(self.q_table[new_obs], axis=0))
                 self.q_table[obs][index] = ((1 - learning_rate) * (self.q_table[obs][index]) + learning_rate *
                                             (reward + gamma * np.argmax(self.q_table[new_obs], axis=0)))
                 if finish:
                     break
                 obs = new_obs
-            explo_proba = max(min_explo_proba, explo_proba - 2 / episodes)
+            #explo_proba = max(min_explo_proba, explo_proba - 2 / episodes)
+            if explo_proba > 0.01 :
+                explo_proba = explo_proba - explo_decre
             print("For episode %s total reward %s" % (e, tot))
             self.rewards.append(tot)
             self.scores.append(score)
