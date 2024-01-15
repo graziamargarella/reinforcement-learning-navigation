@@ -59,7 +59,6 @@ class Enviroment:
         self._place_something(food=True)
         self.clock = pygame.time.Clock()
         pygame.display.update()
-        # pygame.display.flip()
 
     # Random Generator of Coordinates
     def _random_generator_coordinates(self):
@@ -82,7 +81,6 @@ class Enviroment:
         return False
 
     # Method which create an obstacle or a target (depends on boolean value in parameters) in the enviroment
-    # CAN BE IMPROVED WITH A CHECK IF I CANT PLACE ANYWHERE TODO
     def _place_something(self, food):
         x, y = self._random_generator_coordinates()
         tmp = Point(x, y)
@@ -142,26 +140,22 @@ class Enviroment:
         new_pos = None
         if np.array_equal(movement, [1, 0, 0, 0]):
             new_pos = Point(position.x, position.y - 1)
-            # print("Up")
         elif np.array_equal(movement, [0, 1, 0, 0]):
             new_pos = Point(position.x - 1, position.y)
-            # print("Left")
         elif np.array_equal(movement, [0, 0, 1, 0]):
             new_pos = Point(position.x + 1, position.y)
-            # print("Right")
         elif np.array_equal(movement, [0, 0, 0, 1]):
             new_pos = Point(position.x, position.y + 1)
-            # print("Down")
-        if new_pos is None or self._out_of_borders(new_pos):  # -10 -10 1000 -0.1 best combo
-            self.reward = -10  # 10
+        if new_pos is None or self._out_of_borders(new_pos):
+            self.reward = -10
         elif self._hit_obstacle(new_pos):
-            self.reward = -10  # 10
+            self.reward = -10
         elif self._hit_target(new_pos):
-            self.reward = 10000 # 10k
+            self.reward = 10000
             self.score = self.score + 1
             finish_game = False
         else:
-            self.reward = -0.5  # -0.5
+            self.reward = -0.5
             finish_game = False
         if finish_game:
             self.game_over = finish_game
@@ -173,12 +167,12 @@ class Enviroment:
         self.robot = Point(self.dimensionX // (2 * self.dimension_image), self.dimensionY // (2 * self.dimension_image))
         self.obstacles = []
         self._place_something(food=True)
-        # self.place_n_obstacles(20)
         self.score = 0
         self.total_reward = 0
         self.game_over = False
         self.screen.blit(self.image_background, (0, 0))
 
+    # Place a number n of obstacle in the environment
     def place_n_obstacles(self, n):
         for i in range(0, n):
             self._place_something(food=False)
@@ -212,7 +206,8 @@ class Enviroment:
                self._hit_obstacle(down))
         return obs
 
-    # Update the robot position given a movement and eventually reset the game
+    # Update the robot position given a movement and eventually reset the game. 
+    # Returns the reward obtained, the status of the agent, if the environment has been reset and the total reward and score values
     def execute_a_step(self, movement):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -245,6 +240,8 @@ class Enviroment:
             movement = [0, 0, 0, 1]
             self.execute_a_step(movement)
 
-# if __name__ == "__main__":
-#    env = Enviroment()
-#    env.execute()
+"""
+if __name__ == "__main__":
+    env = Enviroment()
+    env.execute()
+"""
