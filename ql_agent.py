@@ -25,7 +25,7 @@ class QlAgent:
     def save_qtable(self):
         set = self.q_table
         result = pd.DataFrame(dict(set))
-        result.to_csv('QL_q_table.csv')
+        result.to_csv('QL_q_table.csv', sep=';')
 
     # Logging and plotting stats
     def logging_stats(self, episode_number, total_reward, score):
